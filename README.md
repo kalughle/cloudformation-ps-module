@@ -8,7 +8,7 @@ Description
 - Deletes a Stack using parameters defined in a custom parameters file
 - Updates a Stack using parameters defined in a custom parameters file
 
-### Current Limitations
+#### Current Limitations
 
 - Does not currently support StackSets
 - Does not currently support most Stack options
@@ -36,11 +36,11 @@ Description
 }
 ```
 
-### Stack Parameters
+#### Stack Parameters
 
 XXX
 
-### Template Parameters
+#### Template Parameters
 
 XXX
 
@@ -50,12 +50,11 @@ XXX `command` YYY
 
 ## Credentials
 
-### AWS
+#### AWS
 
 XXX You can use one of the [standard AWS CLI credential mechanisms](http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html).
 
-
-### Dependencies
+## Dependencies
 
 XXX
 - cloud-nuke uses `dep`, a vendor package management tool for golang. See the dep repo for
