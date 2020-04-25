@@ -1,0 +1,13 @@
+{
+    "stackParameters": {
+        "stackName":     "cf-usw2-configrole",
+        "stackTemplate": "..\\templates\\tmplt_config_role.yaml",
+        "stackRegion":   "us-west-2",
+        "isIamStack":    "true"
+    },
+    "templateParameters": {
+        "iamRemediationRoleName": "configremediationrole",
+        "snsTopicName": "configremediationtopic",
+        "snsDisplayName": "config-rem"
+    }
+}

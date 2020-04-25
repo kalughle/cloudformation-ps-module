@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: A basic template that creates a role for Config Remediation using SSM Automation
+
+###############
+# PARAMETERS
+###############
+Parameters:
+  iamRemediationRoleName:
+    Description: XXX
+    Type: String
+  snsTopicName:
+    Description: XXX
+    Type: String
+    Default: DefaultConfigTopicName
+  snsDisplayName:
+    Description: XXX
+    Type: String
+
+###############
+# RESOURCES
+###############
+Resources:
+  # AWS Remediation Role
+  RemediationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: 
+        Ref: iamRemediationRoleName
+      Description: A role for Config Remediation using SSM Automation
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Sid: AssumeRole01
+          Effect: Allow
+          Principal:
+            Service: 
+            - remediation.config.amazonaws.com
+            - ssm.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonSSMAutomationRole
+
+  # Create SNS Topic
+  SnsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName:
+        Ref: snsTopicName
+      DisplayName: 
+        Ref: snsDisplayName
+
+###############
+# OUTPUTS
+###############
+Outputs:
+  # Output the ARN of the IAM Role created above
+  RemediationRoleArn:
+    Description: The ARN of the IAM Role created by this stack
+    Value:
+      Fn::GetAtt: RemediationRole.Arn
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-RemediationRoleArn
