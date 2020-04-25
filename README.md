@@ -130,4 +130,4 @@ Currently, the **cfmod.psm1** module only supports using a **profile** in the AW
 
 ## License
 
-This code is released under the MIT License. See [LICENSE.txt](/LICENSE.txt).
+This code is released under the MIT License. See [LICENSE](/LICENSE).
