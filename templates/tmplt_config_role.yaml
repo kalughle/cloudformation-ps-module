@@ -11,10 +11,10 @@ Parameters:
   snsTopicName:
     Description: XXX
     Type: String
+    Default: DefaultConfigTopicName
   snsDisplayName:
     Description: XXX
     Type: String
-    Default: T1
 
 ###############
 # RESOURCES
