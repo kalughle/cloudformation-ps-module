@@ -80,21 +80,7 @@ function New-AWSStack {
             # Every 5 seconds, check the status of the stack
             Start-Sleep -Seconds 5
             $objectStatus = (Get-CFNStackSummary -Region $parameters.stackParameters.stackRegion -ProfileName $AWSProfileName | Where-Object {$_.StackId -eq $stackArn}).StackStatus
-            
-            # Host Reporting logic
-            if ($objectStatus -like "*ROLLBACK_COMPLETE") {
-                Write-Host $objectStatus -ForegroundColor Red
-                Remove-AWSStack -ParamFileName $ParamFileName -AWSProfileName $AWSProfileName
-            }
-            elseif ($objectStatus -like "*_COMPLETE") {
-                Write-Host $objectStatus -ForegroundColor Green
-            }
-            elseif ($objectStatus -like "*_FAILED") {
-                Write-Host $objectStatus -ForegroundColor Red
-            }
-            else {
-                Write-Host '.' -NoNewline
-            }
+            #Get-CFNStackEvent -Region $parameters.stackParameters.stackRegion -StackName $parameters.stackParameters.stackName -ProfileName $AWSProfileName | Write-Output
         }
     }
     catch {
