@@ -1,4 +1,4 @@
-function New-AWSStack {
+function Use-AWSStackManager {
     <#
     .SYNOPSIS
     Creates an AWS Stack from a Parameter file.
@@ -17,15 +17,30 @@ function New-AWSStack {
     If omitted, this parameter is populated with the AWS_PROFILE environment variable.
 
     .INPUTS
-    None. You cannot pipe objects to New-AWSStack.
+    None. You cannot pipe objects to Use-AWSStackManager.
 
     .OUTPUTS
     None
 
     .EXAMPLE
-    PS> New-AWSStack -ParamFileName .\param_file.json -AWSProfileName builduser 
+    PS> Use-AWSStackManager -Action Create -ParamFileName .\param_file.json -AWSProfileName builduser 
     
-    This command uses the "builduser" profile to build a stack with the file "param_file.json" in this directory
+    This command uses the "builduser" profile to build a stack within the file "param_file.json" in this directory
+
+    .EXAMPLE
+    PS> Use-AWSStackManager -Action Update -ParamFileName .\param_file.json -AWSProfileName builduser 
+    
+    This command uses the "builduser" profile to update a stack within the file "param_file.json" in this directory
+
+    .EXAMPLE
+    PS> Use-AWSStackManager -Action Delete -ParamFileName .\param_file.json -AWSProfileName builduser 
+    
+    This command uses the "builduser" profile to delete a stack within the file "param_file.json" in this directory
+
+    .EXAMPLE
+    PS> Use-AWSStackManager -Action Events -ParamFileName .\param_file.json -AWSProfileName builduser 
+    
+    This command uses the "builduser" profile to pull all events for a stack within the file "param_file.json" in this directory
 
     .LINK
     https://github.com/kalughle/cloudformation-ps-module
