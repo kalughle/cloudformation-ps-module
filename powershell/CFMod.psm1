@@ -34,7 +34,7 @@ function checkStack {
         # Every 5 seconds, check the status of the stack
         Start-Sleep -Seconds $sleepPeriod
             
-        # Query AWS to see what events are availanble for the stack
+        # Query AWS to see what events are available for the stack
         if ($loopType -eq 'FromStart') {
             $newArray = Get-CFNStackEvent -StackName $stackName -Region $stackRegion -ProfileName $profileName | Where-Object {$_.Timestamp -ge $startTime} | Sort-Object -Property Timestamp
         }
@@ -115,7 +115,7 @@ function checkStack {
             Write-Host $objResourceStatusReasonFinal
 
             ## Flag check to see if this is the end and set the stop if it is
-            if ($object.ResourceType.ToString() -eq 'AWS::CloudFormation::Stack' -and ($object.ResourceStatus.ToString() -eq 'CREATE_COMPLETE' -or $object.ResourceStatus.ToString() -eq 'ROLLBACK_COMPLETE')) {
+            if ($object.ResourceType.ToString() -eq 'AWS::CloudFormation::Stack' -and ($object.ResourceStatus.ToString() -eq 'CREATE_COMPLETE' -or $object.ResourceStatus.ToString() -eq 'ROLLBACK_COMPLETE' -or $object.ResourceStatus.ToString() -eq 'UPDATE_COMPLETE')) {
                 $loopThroughEvents = $false
             }
         }
