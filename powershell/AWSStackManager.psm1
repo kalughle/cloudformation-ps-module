@@ -88,7 +88,7 @@ function Use-AWSStackManager {
             }
             
             # Create the new stack
-            if( $parameters.stackParameters.isIamStack = 'true') {
+            if($parameters.stackParameters.isIamStack = 'true') {
                 New-CFNStack -StackName $parameters.stackParameters.stackName -TemplateBody $template -Parameter $allParams -Region $parameters.stackParameters.stackRegion -Capability 'CAPABILITY_NAMED_IAM' -ProfileName $AWSProfileName | Out-Null
             }
             else {
@@ -116,11 +116,12 @@ function Use-AWSStackManager {
                 $allParams += $params
             }
 
-            # Set date markers
+            # Set date markers by referencing the last event in the stack, then sleep to force a delay
             $refTime = (Get-CFNStackEvent -StackName $parameters.stackParameters.stackName -Region $parameters.stackParameters.stackRegion -ProfileName $AWSProfileName | Sort-Object -Property Timestamp | Select-Object -Last 1).Timestamp
+            Start-Sleep -Seconds 2
 
             # Create the new stack
-            if( $parameters.stackParameters.isIamStack = 'true') {
+            if($parameters.stackParameters.isIamStack = 'true') {
                 Update-CFNStack -StackName $parameters.stackParameters.stackName -TemplateBody $template -Parameter $allParams -Region $parameters.stackParameters.stackRegion -Capability 'CAPABILITY_NAMED_IAM' -ProfileName $AWSProfileName | Out-Null
             }
             else {
@@ -129,12 +130,13 @@ function Use-AWSStackManager {
             Write-Host 'Updating Stack' -ForegroundColor Cyan
 
             # Wait till the stack completes or fails
-            checkStack -stackName $parameters.stackParameters.stackName -stackRegion $parameters.stackParameters.stackRegion -profileName $AWSProfileName -refTime $refTime  -loopType FromStart
+            checkStack -stackName $parameters.stackParameters.stackName -stackRegion $parameters.stackParameters.stackRegion -profileName $AWSProfileName -refTime $refTime -loopType FromStart
         }
         ### Delete Action
         elseif ($Action -eq 'Delete') {
-            # Set date markers
+            # Set date markers by referencing the last event in the stack, then sleep to force a delay
             $refTime = (Get-CFNStackEvent -StackName $parameters.stackParameters.stackName -Region $parameters.stackParameters.stackRegion -ProfileName $AWSProfileName | Sort-Object -Property Timestamp | Select-Object -Last 1).Timestamp
+            Start-Sleep -Seconds 2
             
             # Delete the stack
             Remove-CFNStack -StackName $parameters.stackParameters.stackName -Region $parameters.stackParameters.stackRegion -ProfileName $AWSProfileName -Confirm:$false
@@ -199,15 +201,10 @@ function checkStack {
             $newArray = Get-CFNStackEvent -StackName $stackName -Region $stackRegion -ProfileName $profileName | Sort-Object -Property Timestamp
         }
         
-        # Logic to filter out null objects in the $newArray. Happens in the first loop sometimes
-        if ($workingArray -and $newArray) {
-            $diffObjects = Compare-Object -ReferenceObject $workingArray -DifferenceObject $newArray -PassThru
-        }
-        else {
-            continue
-        }
+        # Do a diff on the new list and the old list
+        $diffObjects = Compare-Object -ReferenceObject $workingArray -DifferenceObject $newArray -PassThru
 
-        # Loop through the diffs in order, writing each column. (This needs to be a function)
+        # Loop through the diffs in order, writing each column. (This needs to be a function - Fix it!!!!)
         foreach ($object in $diffObjects) {
             ## Timestamp column
             $objTimestampSpacing          = ''.PadLeft($preferredTimestampSpacing)
@@ -299,3 +296,5 @@ function checkStack {
     }
     #$workingArray | Write-Output
 }
+
+Export-ModuleMember -Function Use-AWSStackManager
