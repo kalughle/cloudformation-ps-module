@@ -96,6 +96,9 @@ function Use-AWSStackManager {
             }
             Write-Host 'Creating Stack' -ForegroundColor Cyan
 
+            # Set date markers
+            $refTime = Get-Date
+
             # Wait till the stack completes or fails
             checkStack -stackName $parameters.stackParameters.stackName -stackRegion $parameters.stackParameters.stackRegion -profileName $AWSProfileName -loopType FromStart
         }
@@ -112,7 +115,10 @@ function Use-AWSStackManager {
                 $params.ParameterValue = $parameters.templateParameters.$fileProperty
                 $allParams += $params
             }
-            
+
+            # Set date markers
+            $refTime = (Get-CFNStackEvent -StackName $parameters.stackParameters.stackName -Region $parameters.stackParameters.stackRegion -ProfileName $AWSProfileName | Sort-Object -Property Timestamp | Select-Object -Last 1).Timestamp
+
             # Create the new stack
             if( $parameters.stackParameters.isIamStack = 'true') {
                 Update-CFNStack -StackName $parameters.stackParameters.stackName -TemplateBody $template -Parameter $allParams -Region $parameters.stackParameters.stackRegion -Capability 'CAPABILITY_NAMED_IAM' -ProfileName $AWSProfileName | Out-Null
@@ -123,16 +129,19 @@ function Use-AWSStackManager {
             Write-Host 'Updating Stack' -ForegroundColor Cyan
 
             # Wait till the stack completes or fails
-            checkStack -stackName $parameters.stackParameters.stackName -stackRegion $parameters.stackParameters.stackRegion -profileName $AWSProfileName -loopType FromStart
+            checkStack -stackName $parameters.stackParameters.stackName -stackRegion $parameters.stackParameters.stackRegion -profileName $AWSProfileName -refTime $refTime  -loopType FromStart
         }
         ### Delete Action
         elseif ($Action -eq 'Delete') {
+            # Set date markers
+            $refTime = (Get-CFNStackEvent -StackName $parameters.stackParameters.stackName -Region $parameters.stackParameters.stackRegion -ProfileName $AWSProfileName | Sort-Object -Property Timestamp | Select-Object -Last 1).Timestamp
+            
             # Delete the stack
             Remove-CFNStack -StackName $parameters.stackParameters.stackName -Region $parameters.stackParameters.stackRegion -ProfileName $AWSProfileName -Confirm:$false
             Write-Host 'Removing Stack' -ForegroundColor Cyan
-
+            
             # Wait till the stack completes or fails
-            checkStack -stackName $parameters.stackParameters.stackName -stackRegion $parameters.stackParameters.stackRegion -profileName $AWSProfileName -sleepPeriod 2 -loopType FromStart
+            checkStack -stackName $parameters.stackParameters.stackName -stackRegion $parameters.stackParameters.stackRegion -profileName $AWSProfileName -refTime $refTime -sleepPeriod 2 -loopType FromStart
         }
         ### Events Action
         elseif ($Action -eq 'Events') {
@@ -149,6 +158,7 @@ function Use-AWSStackManager {
 function checkStack {
     param (
         $sleepPeriod = 5,
+        $refTime,
         $stackName,
         $stackRegion,
         $profileName,
@@ -175,22 +185,29 @@ function checkStack {
     $newArray = @()
     $workingArray = @()
     $loopThroughEvents = $true
-    $startTime = Get-Date
 
     # While loopThroughEvents is true, loop the events and process them.
     while ($loopThroughEvents) {
-        # Every 5 seconds, check the status of the stack
+        # Every <variable> seconds, check the status of the stack
         Start-Sleep -Seconds $sleepPeriod
             
         # Query AWS to see what events are available for the stack
         if ($loopType -eq 'FromStart') {
-            $newArray = Get-CFNStackEvent -StackName $stackName -Region $stackRegion -ProfileName $profileName | Where-Object {$_.Timestamp -ge $startTime} | Sort-Object -Property Timestamp
+            $newArray = Get-CFNStackEvent -StackName $stackName -Region $stackRegion -ProfileName $profileName | Where-Object {$_.Timestamp -gt $refTime} | Sort-Object -Property Timestamp
         }
         elseif ($loopType -eq 'AllEvents') {
             $newArray = Get-CFNStackEvent -StackName $stackName -Region $stackRegion -ProfileName $profileName | Sort-Object -Property Timestamp
         }
-        $diffObjects = Compare-Object -ReferenceObject $workingArray -DifferenceObject $newArray -PassThru
+        
+        # Logic to filter out null objects in the $newArray. Happens in the first loop sometimes
+        if ($workingArray -and $newArray) {
+            $diffObjects = Compare-Object -ReferenceObject $workingArray -DifferenceObject $newArray -PassThru
+        }
+        else {
+            continue
+        }
 
+        # Loop through the diffs in order, writing each column. (This needs to be a function)
         foreach ($object in $diffObjects) {
             ## Timestamp column
             $objTimestampSpacing          = ''.PadLeft($preferredTimestampSpacing)
@@ -234,15 +251,21 @@ function checkStack {
                                                 $object.ResourceStatus.ToString()
                                             }
             $objResourceStatusFinal       = $objResourceStatus + $objResourceStatusSpacing.Substring(0,($objResourceStatusSpacing.length - $objResourceStatus.length))
+            # If you see the error "Cannot bind parameter 'ForegroundColor' to the target.", you likely need to add an Event Status and color to the Switch below
             $statusColor = switch ($object.ResourceStatus.ToString()) {
                 'CREATE_IN_PROGRESS' {'Green'}
                 'UPDATE_IN_PROGRESS' {'Green'}
                 'UPDATE_COMPLETE_CLEANUP_IN_PROGRESS' {'Green'}
                 'DELETE_IN_PROGRESS' {'Yellow'}
+                'DELETE_SKIPPED' {'Yellow'}
                 'CREATE_COMPLETE' {'Cyan'}
                 'UPDATE_COMPLETE' {'Cyan'}
                 'DELETE_COMPLETE' {'Cyan'}
                 'CREATE_FAILED' {'DarkRed'}
+                'UPDATE_FAILED' {'DarkRed'}
+                'UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS' {'Red'}
+                'UPDATE_ROLLBACK_IN_PROGRESS' {'Red'}
+                'UPDATE_ROLLBACK_COMPLETE' {'Red'}
                 'ROLLBACK_IN_PROGRESS' {'Red'}
                 'ROLLBACK_COMPLETE' {'Red'}
             }
@@ -262,8 +285,12 @@ function checkStack {
                                             }
             Write-Host $objResourceStatusReasonFinal
 
-            ## Flag check to see if this is the end and set the stop if it is
-            if ($object.ResourceType.ToString() -eq 'AWS::CloudFormation::Stack' -and ($object.ResourceStatus.ToString() -eq 'CREATE_COMPLETE' -or $object.ResourceStatus.ToString() -eq 'ROLLBACK_COMPLETE' -or $object.ResourceStatus.ToString() -eq 'UPDATE_COMPLETE')) {
+            ## Flag check to see if this is the end and set the stop the loop if it is
+            if ($object.ResourceType.ToString() -eq 'AWS::CloudFormation::Stack' `
+                -and ($object.ResourceStatus.ToString() -eq 'CREATE_COMPLETE' `
+                      -or $object.ResourceStatus.ToString() -eq 'ROLLBACK_COMPLETE' `
+                      -or $object.ResourceStatus.ToString() -eq 'UPDATE_COMPLETE' `
+                      -or $object.ResourceStatus.ToString() -eq 'UPDATE_ROLLBACK_COMPLETE')) {
                 $loopThroughEvents = $false
             }
         }
