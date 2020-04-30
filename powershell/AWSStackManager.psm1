@@ -73,6 +73,12 @@ function Use-AWSStackManager {
         # Pull the preferences file and convert it from JSON to PSObject
         $parameters = Get-Content $ParamFileName -Raw | ConvertFrom-Json
 
+        # Test basic connectivity. No failure check because the try/catch block catches it
+        Write-Host 'Testing basic connectivity...' -NoNewLine
+        if (Get-CFNStack -ProfileName $AWSProfileName) {
+            Write-Host PASSED -ForegroundColor Green
+        }
+
         ### Create Action
         if ($Action -eq 'Create') {
             # Pull the CloudFormation Template from a JSON file in RAW format
@@ -180,6 +186,7 @@ function checkStack {
     $finalResourceStatusReasonSpacing = $maxUiCharWidth - ($preferredTimestampSpacing + $preferredResourceTypeSpacing + $preferredLogicalResourceIdSpacing + $preferredResourceStatusSpacing)
 
     # Headers for the output
+    Write-Host ''
     Write-Host 'Timestamp              ResourceType               LogicalResourceId          ResourceStatus         ResourceStatusReason'   
     Write-Host '---------              ------------               -----------------          --------------         --------------------' 
 
