@@ -97,10 +97,15 @@ This section of the json file is completely dependant on the **Parameters** sect
 - `PS> Use-AWSStackManager -Action Delete -ParamFileName .\param_file.json -AWSProfileName builduser`
 - `PS> Use-AWSStackManager -Action Delete -ParamFileName .\param_file.json`
 
+### Reading All Events in a Stack
+- The same syntax used for creating a **New** stack can be used for **Reading All Events** in a stack.
+- `PS> Use-AWSStackManager -Action Events -ParamFileName .\param_file.json -AWSProfileName builduser`
+- `PS> Use-AWSStackManager -Action Events -ParamFileName .\param_file.json`
+
 ---
 
 ## Working Example
-This repositiry has a working example of a template and parameters file. The template is very simple and creates an SNS topic and IAM role. Both require inputs that are defined in the parameters file. The commands found above in the **Usage** section can be used to build with these files. 
+This repository has a working example of a template and parameters file. The template is very simple and creates an SNS topic and IAM role. Both require inputs that are defined in the parameters file. The commands found above in the **Usage** section can be used to build with these files. 
 
 ***Note***: If you move the files from their respective locations, you **must** update the *stackTemplate* parameter within the *stackParameters* section inside the **Parameters File**.
 
