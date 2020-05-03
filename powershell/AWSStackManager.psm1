@@ -1,7 +1,7 @@
 function Use-AWSStackManager {
     <#
     .SYNOPSIS
-    Creates an AWS Stack from a Parameter file.
+    Creates, Updates or Deletes an AWS Stack from a Parameter file.
 
     .DESCRIPTION
     XXX
