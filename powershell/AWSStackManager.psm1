@@ -75,7 +75,7 @@ function Use-AWSStackManager {
 
         # Test basic connectivity. No failure check because the try/catch block catches it
         Write-Host 'Testing basic connectivity...' -NoNewLine
-        if (Get-CFNStack -ProfileName $AWSProfileName) {
+        if (Get-CFNStack -ProfileName $AWSProfileName -Region $parameters.stackParameters.stackRegion) {
             Write-Host PASSED -ForegroundColor Green
         }
 
