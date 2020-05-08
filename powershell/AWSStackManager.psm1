@@ -1,7 +1,7 @@
 function Use-AWSStackManager {
     <#
     .SYNOPSIS
-    Creates an AWS Stack from a Parameter file.
+    Creates, Updates or Deletes an AWS Stack from a Parameter file.
 
     .DESCRIPTION
     XXX
@@ -61,6 +61,13 @@ function Use-AWSStackManager {
     try {
         # Set EAP. This forces any error to become a "terminating" error
         $ErrorActionPreference = 'Stop'
+
+        # Store the current directory and change to the new one. (Do not use pushd/popd)
+        $startingPath = (Get-Location).Path
+        $paramFileObject = Get-ChildItem $ParamFileName
+        
+        Set-Location $paramFileObject.DirectoryName
+        $paramFile = '.\' + $paramFileObject.Name
         
         # Import the AWS PS Module
         Import-Module AWSPowerShell
@@ -71,7 +78,7 @@ function Use-AWSStackManager {
         }
 
         # Pull the preferences file and convert it from JSON to PSObject
-        $parameters = Get-Content $ParamFileName -Raw | ConvertFrom-Json
+        $parameters = Get-Content $paramFile -Raw | ConvertFrom-Json
 
         # Test basic connectivity. No failure check because the try/catch block catches it
         Write-Host 'Testing basic connectivity...' -NoNewLine
@@ -160,6 +167,9 @@ function Use-AWSStackManager {
     catch {
         Write-Error $_
         break
+    }
+    finally {
+        Set-Location $startingPath
     }
 }
 
